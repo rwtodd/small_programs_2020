@@ -12,10 +12,15 @@ set tmpDir=%TEMP%\rwt-audio
 set defaultCover=C:\Users\richa\OneDrive\DataFiles\Audio\cover.jpg
 
 if /I "%1" == "/?" goto help 
-if /I "%1" == "/nz" set skipZip=1 & shift
+if /I "%1" == "/nz" (set skipZip=1 & shift)
 
 set src=%~f1
 call set relSrc=%%src:%srcBase%\=%%
+REM if the C: drive address didn't work, try the H: drive
+if [%relSrc%] == [%src%] (
+   set srcBase=H:\OneDrive\DataFiles\Audio
+   call set relSrc=%%src:!srcBase!\=%%
+)
 
 REM *****************************************************************
 REM SEt up the src and tgt directories
