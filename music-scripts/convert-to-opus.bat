@@ -3,8 +3,8 @@ setlocal ENABLEDELAYEDEXPANSION
 
 REM set up some configuration
 set sevenZip="C:\Program Files\7-Zip\7z.exe"
-set ffmpeg="C:\Program Files\ffmpeg-4.1-win64-static\bin\ffmpeg.exe"
-set vorbisq=8
+set opusenc="C:\Program Files\ffmpeg-4.1-win64-static\bin\opusenc.exe"
+set opusvbr=200
 
 set tgtBase=C:\Users\richa\Music
 set srcBase=C:\Users\richa\OneDrive\DataFiles\Audio
@@ -68,12 +68,11 @@ REM *****************************************************************
 FOR %%x IN (*.mp3 *.m4a *.opus *.ogg) DO move "%%x" "%tgt%" 
 
 REM *****************************************************************
-REM Convert FLAC to ogg
+REM Convert FLAC to opus
 REM *****************************************************************
 FOR %%x IN (*.flac) DO (
-  echo Converting %%~nxx to ogg
-  %ffmpeg% -nostats -loglevel error ^
-     -i "%%x" -vn "-c:a" libvorbis "-q:a" %vorbisq% "%tgt%\%%~nx.ogg"
+  echo Converting %%~nxx to opus
+  %opusenc% --quiet --bitrate %opusvbr% "%%x" "%tgt%\%%~nx.opus"
   del "%%x"
 )
 
@@ -81,7 +80,7 @@ echo Done!
 goto :eof
 
 :help 
-  echo This script unzips an audio archive, converts any flac to ogg,
+  echo This script unzips an audio archive, converts any flac to opus,
   echo and leaves the result in the ~\Music folder.
   echo.
   echo Usage: %~n0 [/nz] zipfile
