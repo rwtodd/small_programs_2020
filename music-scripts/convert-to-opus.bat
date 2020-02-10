@@ -4,15 +4,17 @@ setlocal ENABLEDELAYEDEXPANSION
 REM set up some configuration
 set sevenZip="C:\Program Files\7-Zip\7z.exe"
 set opusenc="C:\Program Files\ffmpeg-4.1-win64-static\bin\opusenc.exe"
-set opusvbr=200
+set opusvbr=192
 
 set tgtBase=C:\Users\richa\Music
 set srcBase=C:\Users\richa\OneDrive\DataFiles\Audio
 set tmpDir=%TEMP%\rwt-audio
 set defaultCover=C:\Users\richa\OneDrive\DataFiles\Audio\cover.jpg
 
+:args
 if /I "%1" == "/?" goto help 
-if /I "%1" == "/nz" (set skipZip=1 & shift)
+if /I "%1" == "/nz" (set skipZip=1 & shift & goto args)
+if /I "%1" == "/br" (set opusvbr=%2 & shift & shift & goto args)
 
 set src=%~f1
 call set relSrc=%%src:%srcBase%\=%%
@@ -33,7 +35,7 @@ set tgt=%tgtBase%\%relSrc%
 
 echo Putting the album in %tgt%
 if exist %tgt% (
-  echo Target directory already exists!
+  echo Target directory already exists^^!
   echo.
   choice /C DLQ /N /M "(D)elete existing files, (L)eave them, or (Q)uit? "
   if !ERRORLEVEL! EQU 0 (echo ERORR! & goto error)
@@ -62,6 +64,7 @@ if exist cover.jpg (
   copy "%defaultCover%" "%tgt%"
 )
 
+SETLOCAL DisableDelayedExpansion
 REM *****************************************************************
 REM Transfer any mp3, m4a, opus, or ogg files
 REM *****************************************************************
@@ -71,20 +74,23 @@ REM *****************************************************************
 REM Convert FLAC to opus
 REM *****************************************************************
 FOR %%x IN (*.flac) DO (
-  echo Converting %%~nxx to opus
+  echo Converting %%~nxx to opus at %opusvbr% kbits/s 
   %opusenc% --quiet --bitrate %opusvbr% "%%x" "%tgt%\%%~nx.opus"
   del "%%x"
 )
+ENDLOCAL
 
-echo Done!
+echo Done^^!
 goto :eof
 
 :help 
   echo This script unzips an audio archive, converts any flac to opus,
   echo and leaves the result in the ~\Music folder.
   echo.
-  echo Usage: %~n0 [/nz] zipfile
-  echo    /NZ:  skip the unzipping stage (No Zip) 
+  echo Usage: %~n0 [/nz] [/br rate] zipfile
+  echo    /NZ:       skip the unzipping stage (No Zip) 
+  echo    /BR rate:  convert at `rate` kbit/s instead of default 192
+  echo.
 :error
   exit /b 2
 
