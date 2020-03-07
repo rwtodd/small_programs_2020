@@ -4,7 +4,7 @@ setlocal ENABLEDELAYEDEXPANSION
 REM set up some configuration
 set sevenZip="C:\Program Files\7-Zip\7z.exe"
 set opusenc="C:\Program Files\ffmpeg-4.1-win64-static\bin\opusenc.exe"
-set opusvbr=192
+set opusvbr=128
 
 set tgtBase=C:\Users\richa\Music
 set srcBase=C:\Users\richa\OneDrive\DataFiles\Audio
@@ -89,7 +89,7 @@ goto :eof
   echo.
   echo Usage: %~n0 [/nz] [/br rate] zipfile
   echo    /NZ:       skip the unzipping stage (No Zip) 
-  echo    /BR rate:  convert at `rate` kbit/s instead of default 192
+  echo    /BR rate:  convert at `rate` kbit/s instead of default 128
   echo.
 :error
   exit /b 2
