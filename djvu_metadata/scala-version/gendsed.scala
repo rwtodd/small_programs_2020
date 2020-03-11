@@ -1,7 +1,5 @@
 package org.rwtodd.gendsed
 
-import java.io.PrintStream
-
 case class BookPage(val prefix: String, val number: Option[Int]) {
    def nextPage = BookPage(prefix, number.map(_ + 1).orElse(Some(2)))
    def pageTitle = prefix + number.map(_.toString()).getOrElse("")
@@ -47,45 +45,59 @@ object GenDsed {
          foreach(onPage(_))
 
   def main(args: Array[String]) :Unit = {
-        val (pages, marks, metas) = parseInput(scala.io.Source.fromFile(args(0)).getLines())
-        val out: PrintStream = System.out
-        val mm = new scala.collection.mutable.ArrayBuffer[ResolvedMark](marks.size)
-        var remaining : scala.collection.View[BookMark] = marks.view
-        forAllDjvuPages(pages) { p =>
-           // output the page
-           out.printf("select %d; set-page-title \"%s\"\n", p.num, p.bp.pageTitle)
-           // now, check if we can match any bookmarks... 
-           var found = !remaining.isEmpty
-           while (found) {
-               remaining.head match { 
-                case x if x.bp.numeric => {
-                   mm += ResolvedMark(x.bp.number.getOrElse(0), x.title)
-                   remaining = remaining.tail
-                   found = !remaining.isEmpty
-                }
-                case x if x.bp == p.bp => {
-                   mm += ResolvedMark(p.num, x.title)
-                   remaining = remaining.tail
-                   found = !remaining.isEmpty
-                }
-                case _ => found = false
-              } 
-           }
-        }
-        if (!remaining.isEmpty) {
-           System.err.printf("Error: bookmark <%s> not found!%n", remaining.head.title)
+        import java.io.PrintWriter
+        import java.nio.file.{Files,Paths}
+        import java.nio.charset.StandardCharsets
+        if (args.size != 1) {
+           System.err.println("Usage: gen-dsed <file>")
            System.exit(1)
         }
-        if (!metas.isEmpty) {
-           out.println("select; set-meta")
-           for ((k,v) <- metas) out.printf("%s\t\"%s\"%n", k, v)
-           out.println(".")
-        }
-        if (!mm.isEmpty) {
-           out.printf("select; set-outline%n(bookmarks%n")           
-           for (m <- mm) out.printf("  (\"%s\" \"#%d\")%n", m.title, m.num)
-           out.printf(")%n.%n")           
-        }
+        val inName = args(0)
+        val (pages, marks, metas) = parseInput(scala.io.Source.fromFile(inName).getLines())
+        val out = new PrintWriter(Files.newBufferedWriter(Paths.get(inName+".dsed"), StandardCharsets.UTF_8))
+        val mm = new scala.collection.mutable.ArrayBuffer[ResolvedMark](marks.size)
+        var remaining : scala.collection.View[BookMark] = marks.view
+
+        System.err.println("Writing " + inName + ".dsed.")
+        try {
+          forAllDjvuPages(pages) { p =>
+             // output the page
+             out.printf("select %d; set-page-title \"%s\"%n", p.num, p.bp.pageTitle)
+             // now, check if we can match any bookmarks... 
+             var keepMatching = !remaining.isEmpty
+             while (keepMatching) {
+                 remaining.head match { 
+                  case x if x.bp.numeric => {
+                     mm += ResolvedMark(x.bp.number.getOrElse(0), x.title)
+                     remaining = remaining.tail
+                     keepMatching = !remaining.isEmpty
+                  }
+                  case x if x.bp == p.bp => {
+                     mm += ResolvedMark(p.num, x.title)
+                     remaining = remaining.tail
+                     keepMatching = !remaining.isEmpty
+                  }
+                  case _ => keepMatching = false
+                } 
+             }
+          }
+          if (!remaining.isEmpty) {
+             System.err.printf("Error: bookmark <%s> not found!%n", remaining.head.title)
+             System.exit(1)
+          }
+          if (!metas.isEmpty) {
+             out.println("select; set-meta")
+             for ((k,v) <- metas) out.printf("%s\t\"%s\"%n", k, v)
+             out.println(".")
+          }
+          if (!mm.isEmpty) {
+             out.printf("select; set-outline%n(bookmarks%n")           
+             for (m <- mm) out.printf("  (\"%s\" \"#%d\")%n", m.title, m.num)
+             out.printf(")%n.%n")           
+          }
+      } finally {
+          out.close()
+      }
   }
 }
 
