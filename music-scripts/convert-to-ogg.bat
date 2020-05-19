@@ -11,8 +11,10 @@ set srcBase=C:\Users\richa\OneDrive\DataFiles\Audio
 set tmpDir=%TEMP%\rwt-audio
 set defaultCover=C:\Users\richa\OneDrive\DataFiles\Audio\cover.jpg
 
+:args
 if /I "%1" == "/?" goto help 
-if /I "%1" == "/nz" (set skipZip=1 & shift)
+if /I "%1" == "/nz" (set skipZip=1 & shift & goto args)
+if /I "%1" == "/vq" (set vorbisq=%2 & shift & shift & goto args)
 
 set src=%~f1
 call set relSrc=%%src:%srcBase%\=%%
@@ -33,7 +35,7 @@ set tgt=%tgtBase%\%relSrc%
 
 echo Putting the album in %tgt%
 if exist %tgt% (
-  echo Target directory already exists!
+  echo Target directory already exists^^!
   echo.
   choice /C DLQ /N /M "(D)elete existing files, (L)eave them, or (Q)uit? "
   if !ERRORLEVEL! EQU 0 (echo ERORR! & goto error)
@@ -62,6 +64,7 @@ if exist cover.jpg (
   copy "%defaultCover%" "%tgt%"
 )
 
+SETLOCAL DisableDelayedExpansion
 REM *****************************************************************
 REM Transfer any mp3, m4a, opus, or ogg files
 REM *****************************************************************
@@ -71,21 +74,23 @@ REM *****************************************************************
 REM Convert FLAC to ogg
 REM *****************************************************************
 FOR %%x IN (*.flac) DO (
-  echo Converting %%~nxx to ogg
+  echo Converting %%~nxx to ogg at -q:a %vorbisq%
   %ffmpeg% -nostats -loglevel error ^
      -i "%%x" -vn "-c:a" libvorbis "-q:a" %vorbisq% "%tgt%\%%~nx.ogg"
   del "%%x"
 )
+ENDLOCAL
 
-echo Done!
+echo Done^^!
 goto :eof
 
 :help 
   echo This script unzips an audio archive, converts any flac to ogg,
   echo and leaves the result in the ~\Music folder.
   echo.
-  echo Usage: %~n0 [/nz] zipfile
+  echo Usage: %~n0 [/nz] [/vq quality] zipfile
   echo    /NZ:  skip the unzipping stage (No Zip) 
+  echo    /VQ quality:  convert at -q `quality` instead of default 8 
 :error
   exit /b 2
 
