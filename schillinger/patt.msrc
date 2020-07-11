@@ -1,0 +1,54 @@
+-- Schillinger Patterns
+function const(n)
+	return coroutine.wrap(
+		function() repeat coroutine.yield(n,true) until false end
+	)
+end
+
+function dotimes(patt, n)
+	return coroutine.wrap(
+		function()
+			local count = 0
+			repeat
+				local v, e = patt()
+				if e then count = (count + 1) % n end
+				coroutine.yield(v,e and count == 0)
+			until false	
+		end
+	)
+end
+
+function interfere(a,b)
+	return coroutine.wrap(
+		function()
+			local aval, aend = a()
+			local bval,bend = b()
+			local cur = 0
+			repeat
+				local tmp
+				cur = math.min(aval,bval)
+				aval = aval - cur
+				bval = bval - cur
+				coroutine.yield(cur, aend and bend and aval == 0 and bval == 0)
+				if aval == 0 then aval, aend = a() end
+				if bval == 0 then bval, bend = b() end
+			until false
+		end
+	)
+end
+
+-- take a pattern of durations and return it with a running total of start times
+function startTimes(a)
+	return coroutine.wrap(
+		function()
+			local t,dur,e = 0, 0, false
+			repeat
+				dur, e = a()
+				coroutine.yield(t, d, e)
+				t = t + dur
+			until false
+		end
+	)
+end
+
+-- vim: filetype=lua:tabstop=4:tw=0:noet:
