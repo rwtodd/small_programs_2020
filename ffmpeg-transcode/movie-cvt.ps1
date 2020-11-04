@@ -8,24 +8,39 @@ ffmpeg and ffprobe are used in this process
 
 .Parameter movie
 The movie to transcode
+.Parameter mixdown
+Mix down 5.1 surround sound to Stereo
+.Parameter mapall
+Map all the input streams
 
 .Example
 movie-cvt.ps1 -movie my-file.mkv
 #>
 Param (
-   [Parameter(Mandatory=$true)][System.IO.FileInfo] $movie
+   [Parameter(Mandatory=$true)][System.IO.FileInfo] $movie,
+   [Switch] $mixdown,
+   [Switch] $mapall
 )
 
 $probe = "C:\Program Files\ffmpeg-20200831-4a11a6f-win64-static\bin\ffprobe.exe"
 $mpeg = "C:\Program Files\ffmpeg-20200831-4a11a6f-win64-static\bin\ffmpeg.exe"
 
-& $probe -i $movie
 $result = $movie.BaseName + "_small.mkv"
 echo "Writing result to $result"
 
-$streams = "0 " + (Read-Host -Prompt "Which streams to map? (0 is a given) ")
-$streams = ($streams -split '\s+') | ForEach-Object -Process { "-map 0:" + $_ }
+$streams = "-map 0"
 
-$cmd = "& `"$mpeg`" -i `"$movie`" -c:s copy -c:v libx265 -crf 23 -c:a libopus -b:a 128k $streams `"$result`""
+if(-not $mapall) {
+  & $probe -i $movie
+  $streams = "0 " + (Read-Host -Prompt "Which streams to map? (0 is a given) ")
+  $streams = ($streams -split '\s+') | ForEach-Object -Process { "-map 0:" + $_ }
+}
+
+$mix = ""
+if($mixdown) {
+   $mix = "-ac 2"
+}
+
+$cmd = "& `"$mpeg`" -i `"$movie`" -c:s copy -c:v libx265 -crf 23 -c:a libopus -b:a 128k $streams $mix `"$result`""
 echo $cmd
 Invoke-Expression $cmd
