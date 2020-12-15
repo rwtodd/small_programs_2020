@@ -9,3 +9,4 @@ that.
  - redo-par-bkup.sh: a script to create the par files
  - space-to-underscore.sh: a script to replace spaces with underscores in
    files under the current directory
+ - getLengths.ps1  a script to look for duplicate MP4 movies based on their length
