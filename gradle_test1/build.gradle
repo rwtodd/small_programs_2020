@@ -1,0 +1,95 @@
+// you can set default tasks...
+defaultTasks 'upper'
+
+task hello {
+     doLast {
+     	    println 'Hello world!'
+     }
+}
+
+task upper {
+    doLast {
+        String someString = 'mY_nAmE'
+        println "Original: $someString"
+        println "Upper case: ${someString.toUpperCase()}"
+    }
+}
+
+// tasks can depend on other tasks
+task intro {
+    dependsOn hello
+    doLast {
+        println "I'm Gradle"
+    }
+}
+
+// tasks can be generated dynamically
+4.times { counter ->
+    task "task$counter" {
+        doLast {
+            println "I'm task number $counter"
+        }
+    }
+}
+// ... and configured after the fact
+task0.dependsOn task2, task3
+
+// more examples of configuring after the fact...
+hello.doFirst {
+    println 'Hello Venus'
+}
+
+hello.configure {
+    doLast {
+        println greeting('Hello Mars')
+    }
+}
+
+// additional properties of a task (e.g., rwtfun) can
+// be added via `ext.rwtfun`, and even used prior to
+// definition, as seen here...
+hello.configure {
+    doLast {
+        println greeting("hello $rwtfun")
+    }
+}
+
+hello.configure {
+    ext.rwtfun = 'rwt is fun'
+}
+
+// you can define functions, too...
+String greeting(String arg) {
+       "The best is yet to $arg!"
+}
+
+// you can check the task graph after configuration but before
+// running anything....
+gradle.taskGraph.whenReady { tg ->
+  if(tg.hasTask(':hello')) {
+     println "running hello as part of this build..."
+     println "look out!"
+  }
+}
+
+// you can add a dependency to your build from within
+// the build script... ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import org.apache.commons.codec.binary.Base64
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'commons-codec', name: 'commons-codec', version: '1.2'
+    }
+}
+
+task encode {
+    doLast {
+        def byte[] encodedString = new Base64().encode('hello world\n'.getBytes())
+        println new String(encodedString)
+    }
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
