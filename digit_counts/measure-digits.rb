@@ -1,5 +1,5 @@
 def histo(n)
-  n.to_s.split('').group_by {|x| x}.transform_values {|x| x.size}
+  n.to_s.chars.group_by {|x| x}.transform_values! {|v| v.size}
 end
 
 p histo(1038**931)
